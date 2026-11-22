@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>SahyoNix Tic Tac Toe</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SahyoNix">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#0a0a0a;
+    --surface:#141414;
+    --surface-2:#1b1b1b;
+    --border:#2a2a2a;
+    --white:#f2f0ea;
+    --dim:#8f8a80;
+    --gold:#d4af37;
+    --gold-soft:#e8cd6b;
+    --gold-glow:rgba(212,175,55,.35);
+    --danger:#b6503f;
+    --ok:#5c9c6b;
+    --radius-lg:22px;
+    --radius-md:14px;
+    --radius-sm:9px;
+    --font-display: "Cormorant Garamond","Iowan Old Style","Palatino Linotype",serif;
+    --font-body: "Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+  }
+  [data-theme="light"]{
+    --bg:#f3efe6;
+    --surface:#ffffff;
+    --surface-2:#faf7f0;
+    --border:#e0d8c5;
+    --white:#1b1810;
+    --dim:#7a7266;
+    --gold:#a87f1d;
+    --gold-soft:#c79a2e;
+    --gold-glow:rgba(168,127,29,.25);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, rgba(212,175,55,.08), transparent 60%),
+      var(--bg);
+    color:var(--white);
+    font-family:var(--font-body);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    transition:background .4s ease, color .4s ease;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important; transition-duration:.001ms !important;}
+  }
+  body.no-anim *{ animation:none !important; transition:none !important; }
+
+  a,button{font-family:inherit;}
+  button{cursor:pointer;}
+  :focus-visible{
+    outline:2px solid var(--gold);
+    outline-offset:3px;
+    border-radius:6px;
+  }
+
+  /* ---------- Header ---------- */
+  header.site-header{
+    padding:22px 20px 14px;
+    text-align:center;
+    position:relative;
+  }
+  .brandmark{
+    display:inline-flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+    position:relative;
+  }
+  .brand-glow{
+    position:absolute;
+    inset:-30px -60px;
+    background:radial-gradient(circle, var(--gold-glow), transparent 70%);
+    filter:blur(6px);
+    animation:pulseGlow 4.5s ease-in-out infinite;
+    pointer-events:none;
+    z-index:0;
+  }
+  @keyframes pulseGlow{
+    0%,100%{opacity:.55; transform:scale(1);}
+    50%{opacity:1; transform:scale(1.08);}
+  }
+  .brand-name{
+    position:relative; z-index:1;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:clamp(2rem, 6vw, 2.9rem);
+    letter-spacing:.04em;
+    margin:0;
+    background:linear-gradient(120deg, var(--gold-soft), var(--gold) 45%, var(--gold-soft));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .brand-sub{
+    position:relative; z-index:1;
+    font-size:.78rem;
+    letter-spacing:.32em;
+    color:var(--dim);
+    margin:0;
+    text-transform:uppercase;
+  }
+
+  /* ---------- Layout ---------- */
+  main{
+    flex:1;
+    width:100%;
+    max-width:560px;
+    margin:0 auto;
+    padding:10px 18px 40px;
+    display:flex;
+    flex-direction:column;
+  }
+  .screen{ display:none; animation:fadeSlide .35s ease; }
+  .screen.active{ display:flex; flex-direction:column; gap:18px;}
+  @keyframes fadeSlide{
+    from{opacity:0; transform:translateY(10px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  .card{
+    background:linear-gradient(180deg, var(--surface), var(--surface-2));
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:22px;
+    backdrop-filter:blur(6px);
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+
+  /* ---------- Menu buttons ---------- */
+  .menu-list{ display:flex; flex-direction:column; gap:12px; }
+  .menu-btn{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    color:var(--white);
+    padding:16px 18px;
+    border-radius:var(--radius-md);
+    font-size:1.02rem;
+    font-weight:600;
+    text-align:left;
+    transition:border-color .25s ease, transform .18s ease, box-shadow .25s ease;
+  }
+  .menu-btn .ic{
+    width:38px; height:38px;
+    flex:0 0 38px;
+    border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(212,175,55,.08);
+    color:var(--gold);
+    font-size:1.15rem;
+  }
+  .menu-btn .label small{
+    display:block;
+    font-weight:400;
+    font-size:.76rem;
+    color:var(--dim);
+    margin-top:2px;
+  }
+  .menu-btn:hover, .menu-btn:focus-visible{
+    border-color:var(--gold);
+    box-shadow:0 0 0 1px var(--gold-glow), 0 8px 24px var(--gold-glow);
+    transform:translateY(-2px);
+  }
+  .menu-btn:active{ transform:translateY(0) scale(.99); }
+
+  .btn{
+    background:var(--gold);
+    color:#0a0a0a;
+    border:none;
+    padding:13px 20px;
+    border-radius:var(--radius-sm);
+    font-weight:700;
+    font-size:.95rem;
+    letter-spacing:.01em;
+    transition:transform .15s ease, box-shadow .25s ease, filter .2s ease;
+    box-shadow:0 6px 18px var(--gold-glow);
+  }
+  .btn:hover{ filter:brightness(1.08); transform:translateY(-1px); }
+  .btn:active{ transform:translateY(0) scale(.98); }
+  .btn.ghost{
+    background:transparent;
+    color:var(--white);
+    border:1px solid var(--border);
+    box-shadow:none;
+  }
+  .btn.ghost:hover{ border-color:var(--gold); color:var(--gold); }
+  .btn.danger{ background:var(--danger); color:#fff; box-shadow:0 6px 18px rgba(182,80,63,.3); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; transform:none; }
+  .btn-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .btn-row .btn{ flex:1; min-width:120px; }
+
+  .back-row{ display:flex; align-items:center; justify-content:space-between; }
+  .icon-btn{
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    color:var(--dim);
+    width:40px; height:40px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.1rem;
+    transition:all .2s ease;
+  }
+  .icon-btn:hover{ color:var(--gold); border-color:var(--gold); }
+
+  h2.screen-title{
+    font-family:var(--font-display);
+    font-size:1.7rem;
+    margin:0;
+    color:var(--white);
+    letter-spacing:.02em;
+  }
+  p.screen-desc{ color:var(--dim); margin:-8px 0 0; font-size:.9rem; }
+
+  /* ---------- Form elements ---------- */
+  label.field-label{
+    display:block;
+    font-size:.72rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--dim);
+    margin-bottom:8px;
+  }
+  input[type="text"]{
+    width:100%;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    color:var(--white);
+    padding:13px 14px;
+    border-radius:var(--radius-sm);
+    font-size:1rem;
+    transition:border-color .2s ease;
+  }
+  input[type="text"]:focus{ border-color:var(--gold); }
+
+  .choice-row{ display:flex; gap:10px; }
+  .choice-btn{
+    flex:1;
+    padding:14px 10px;
+    border-radius:var(--radius-sm);
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    color:var(--white);
+    font-weight:700;
+    font-size:1rem;
+    transition:all .2s ease;
+  }
+  .choice-btn[aria-pressed="true"]{
+    border-color:var(--gold);
+    background:rgba(212,175,55,.1);
+    color:var(--gold);
+    box-shadow:0 0 0 1px var(--gold-glow);
+  }
+  .choice-btn small{ display:block; font-size:.68rem; font-weight:400; color:var(--dim); margin-top:3px;}
+
+  .diff-desc{
+    text-align:center;
+    font-size:.85rem;
+    color:var(--dim);
+    min-height:20px;
+  }
+  .diff-desc b{ color:var(--gold); }
+
+  .field-block{ display:flex; flex-direction:column; gap:8px; }
+
+  /* ---------- Game screen ---------- */
+  .status-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:var(--radius-md);
+    padding:12px 16px;
+  }
+  .turn-indicator{ display:flex; align-items:center; gap:10px; }
+  .turn-dot{
+    width:14px; height:14px; border-radius:50%;
+    background:var(--gold);
+    box-shadow:0 0 10px var(--gold-glow);
+    flex:0 0 14px;
+  }
+  .turn-dot.o{ background:#c9c4b8; box-shadow:0 0 10px rgba(201,196,184,.4);}
+  .turn-text{ font-weight:700; font-size:.95rem; }
+  .turn-text small{ display:block; font-weight:400; color:var(--dim); font-size:.72rem; }
+  .thinking-dots{ display:inline-flex; gap:3px; margin-left:6px;}
+  .thinking-dots span{
+    width:5px; height:5px; border-radius:50%; background:var(--gold);
+    animation:blink 1.1s infinite ease-in-out;
+  }
+  .thinking-dots span:nth-child(2){ animation-delay:.15s; }
+  .thinking-dots span:nth-child(3){ animation-delay:.3s; }
+  @keyframes blink{ 0%,80%,100%{opacity:.2;} 40%{opacity:1;} }
+
+  .board{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    aspect-ratio:1/1;
+    width:100%;
+    max-width:420px;
+    margin:0 auto;
+  }
+  .cell{
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:var(--radius-md);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:clamp(2.2rem, 10vw, 3.4rem);
+    font-weight:700;
+    font-family:var(--font-display);
+    color:var(--white);
+    position:relative;
+    overflow:hidden;
+    transition:border-color .2s ease, box-shadow .2s ease, transform .1s ease;
+  }
+  .cell:not(.filled):not(:disabled):hover{
+    border-color:var(--gold);
+    box-shadow:inset 0 0 0 1px var(--gold-glow), 0 0 18px var(--gold-glow);
+  }
+  .cell:active:not(.filled):not(:disabled){ transform:scale(.96); }
+  .cell.filled{ cursor:default; }
+  .cell .mark{ animation:markIn .28s cubic-bezier(.2,1.4,.4,1); }
+  @keyframes markIn{
+    from{ opacity:0; transform:scale(.3) rotate(-15deg); }
+    to{ opacity:1; transform:scale(1) rotate(0); }
+  }
+  .cell.mark-x .mark{ color:var(--gold); }
+  .cell.mark-o .mark{ color:#cfcabd; }
+  .cell.win{
+    background:rgba(212,175,55,.14);
+    border-color:var(--gold);
+    animation:winPulse 1s ease-in-out infinite;
+  }
+  @keyframes winPulse{
+    0%,100%{ box-shadow:0 0 10px var(--gold-glow); }
+    50%{ box-shadow:0 0 26px var(--gold-glow), inset 0 0 12px var(--gold-glow); }
+  }
+  .board.draw .cell{ animation:shakeSoft .5s ease; }
+  @keyframes shakeSoft{
+    0%,100%{ transform:translateX(0); }
+    25%{ transform:translateX(-3px); }
+    75%{ transform:translateX(3px); }
+  }
+
+  .controls-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .controls-row .btn{ flex:1; min-width:110px; font-size:.85rem; padding:11px 14px; }
+
+  /* ---------- Scoreboard ---------- */
+  .scoreboard{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+  }
+  .score-tile{
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:10px 6px;
+    text-align:center;
+  }
+  .score-tile .num{
+    font-family:var(--font-display);
+    font-size:1.5rem;
+    font-weight:700;
+    color:var(--gold);
+    transition:transform .25s ease;
+  }
+  .score-tile .num.bump{ animation:bump .35s ease; }
+  @keyframes bump{ 0%{transform:scale(1);} 40%{transform:scale(1.3);} 100%{transform:scale(1);} }
+  .score-tile .lbl{ font-size:.62rem; letter-spacing:.06em; text-transform:uppercase; color:var(--dim); margin-top:3px; }
+  .streak-note{ text-align:center; font-size:.78rem; color:var(--dim); }
+  .streak-note b{ color:var(--gold); }
+
+  /* ---------- Result overlay ---------- */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(4,4,4,.72);
+    backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    z-index:50;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .3s ease;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .result-card{
+    background:linear-gradient(180deg, var(--surface), var(--surface-2));
+    border:1px solid var(--gold);
+    box-shadow:0 0 60px var(--gold-glow), 0 20px 50px rgba(0,0,0,.5);
+    border-radius:var(--radius-lg);
+    padding:36px 28px;
+    text-align:center;
+    max-width:380px;
+    width:100%;
+    transform:scale(.85) translateY(16px);
+    transition:transform .35s cubic-bezier(.2,1.2,.4,1);
+  }
+  .overlay.show .result-card{ transform:scale(1) translateY(0); }
+  .result-title{
+    font-family:var(--font-display);
+    font-size:2.1rem;
+    margin:0 0 8px;
+    letter-spacing:.04em;
+    color:var(--gold);
+  }
+  .result-title.loss{ color:#c07a6b; }
+  .result-title.draw{ color:var(--dim); }
+  .result-sub{ color:var(--white); font-size:.95rem; margin:0 0 24px; opacity:.85; }
+
+  /* ---------- Leaderboard ---------- */
+  .lb-sort-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .lb-sort-row .choice-btn{ flex:0 0 auto; padding:9px 14px; font-size:.8rem; font-weight:600; }
+  .lb-table{ display:flex; flex-direction:column; gap:8px; max-height:52vh; overflow-y:auto; }
+  .lb-row{
+    display:grid;
+    grid-template-columns:26px 1fr auto;
+    gap:12px;
+    align-items:center;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:10px 14px;
+  }
+  .lb-rank{ color:var(--gold); font-weight:700; font-family:var(--font-display); font-size:1.1rem; }
+  .lb-name{ font-weight:600; }
+  .lb-meta{ font-size:.72rem; color:var(--dim); margin-top:2px; }
+  .lb-stat{ text-align:right; }
+  .lb-stat .big{ color:var(--gold); font-weight:700; }
+  .empty-note{ text-align:center; color:var(--dim); padding:30px 10px; font-size:.9rem; }
+
+  /* ---------- How to play ---------- */
+  .steps{ display:flex; flex-direction:column; gap:12px; }
+  .step{
+    display:flex; gap:14px; align-items:flex-start;
+    background:var(--surface-2); border:1px solid var(--border);
+    border-radius:var(--radius-md); padding:14px 16px;
+  }
+  .step-num{
+    flex:0 0 30px; height:30px; border-radius:50%;
+    background:rgba(212,175,55,.1); color:var(--gold);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-family:var(--font-display); font-size:1rem;
+  }
+  .step p{ margin:0; font-size:.9rem; color:var(--white); line-height:1.45; }
+
+  /* ---------- Settings ---------- */
+  .setting-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 0;
+    border-bottom:1px solid var(--border);
+    gap:14px;
+  }
+  .setting-row:last-child{ border-bottom:none; }
+  .setting-label{ font-weight:600; font-size:.92rem; }
+  .setting-label small{ display:block; font-weight:400; color:var(--dim); font-size:.74rem; margin-top:2px; }
+
+  .switch{ position:relative; width:48px; height:27px; flex:0 0 48px; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider-toggle{
+    position:absolute; inset:0; background:var(--border); border-radius:30px;
+    transition:background .25s ease; cursor:pointer;
+  }
+  .slider-toggle::before{
+    content:""; position:absolute; left:3px; top:3px; width:21px; height:21px;
+    background:#fff; border-radius:50%; transition:transform .25s ease;
+  }
+  .switch input:checked + .slider-toggle{ background:var(--gold); }
+  .switch input:checked + .slider-toggle::before{ transform:translateX(21px); }
+  .switch input:focus-visible + .slider-toggle{ outline:2px solid var(--gold); outline-offset:2px; }
+
+  input[type="range"]{
+    -webkit-appearance:none; appearance:none;
+    width:120px; height:4px; border-radius:4px;
+    background:var(--border); outline:none;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+    background:var(--gold); cursor:pointer; box-shadow:0 0 8px var(--gold-glow);
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:16px; height:16px; border-radius:50%; border:none;
+    background:var(--gold); cursor:pointer;
+  }
+
+  .theme-row{ display:flex; gap:8px; }
+  .theme-row .choice-btn{ padding:9px 16px; font-size:.82rem; }
+
+  /* ---------- Footer ---------- */
+  footer{
+    text-align:center;
+    padding:16px 20px 26px;
+    color:var(--dim);
+    font-size:.74rem;
+    letter-spacing:.02em;
+  }
+  footer .gold{ color:var(--gold); }
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+    background:var(--surface); border:1px solid var(--gold);
+    color:var(--white); padding:12px 20px; border-radius:30px;
+    font-size:.85rem; box-shadow:0 10px 26px rgba(0,0,0,.4);
+    opacity:0; pointer-events:none; transition:all .3s ease;
+    z-index:60; max-width:90vw; text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* confirm dialog */
+  .confirm-overlay{
+    position:fixed; inset:0; background:rgba(4,4,4,.72); backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center; padding:20px; z-index:70;
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  .confirm-overlay.show{ opacity:1; pointer-events:auto; }
+  .confirm-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+    padding:26px; max-width:340px; width:100%; text-align:center;
+    transform:scale(.9); transition:transform .25s ease;
+  }
+  .confirm-overlay.show .confirm-card{ transform:scale(1); }
+  .confirm-card p{ font-size:.92rem; color:var(--dim); margin:8px 0 20px; }
+  .confirm-card h3{ margin:0; font-family:var(--font-display); font-size:1.3rem; }
+
+  .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
+
+  @media (max-width:380px){
+    .scoreboard{ grid-template-columns:repeat(2,1fr); }
+    .cell{ font-size:2.2rem; }
+  }
+</style>
+</head>
+<body data-theme="dark">
+
+<header class="site-header">
+  <div class="brandmark">
+    <div class="brand-glow" aria-hidden="true"></div>
+    <p class="brand-name">SahyoNix</p>
+    <p class="brand-sub">Tic&nbsp;Tac&nbsp;Toe</p>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- MENU -->
+  <section class="screen active" id="screen-menu" aria-label="Main menu">
+    <div class="card">
+      <div class="menu-list">
+        <button class="menu-btn" data-nav="ai-setup">
+          <span class="ic" aria-hidden="true">♟</span>
+          <span class="label">Play vs AI<small>Challenge the SahyoNix engine</small></span>
+        </button>
+        <button class="menu-btn" data-nav="local-setup">
+          <span class="ic" aria-hidden="true">♟♟</span>
+          <span class="label">Local 2 Player<small>Face off on one device</small></span>
+        </button>
+        <button class="menu-btn" data-nav="leaderboard">
+          <span class="ic" aria-hidden="true">🏆</span>
+          <span class="label">Leaderboard<small>See who's on top</small></span>
+        </button>
+        <button class="menu-btn" data-nav="howto">
+          <span class="ic" aria-hidden="true">✦</span>
+          <span class="label">How to Play<small>Quick rules refresher</small></span>
+        </button>
+        <button class="menu-btn" data-nav="settings">
+          <span class="ic" aria-hidden="true">⚙</span>
+          <span class="label">Settings<small>Sound, theme &amp; data</small></span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI SETUP -->
+  <section class="screen" id="screen-ai-setup" aria-label="Play vs AI setup">
+    <div class="back-row">
+      <button class="icon-btn" data-nav="menu" aria-label="Back to menu">←</button>
+      <h2 class="screen-title">Play vs AI</h2>
+      <span style="width:40px"></span>
+    </div>
+    <div class="card" style="display:flex; flex-direction:column; gap:20px;">
+      <div class="field-block">
+        <label class="field-label" for="ai-player-name">Your name</label>
+        <input type="text" id="ai-player-name" maxlength="16" placeholder="Player" autocomplete="off">
+      </div>
+      <div class="field-block">
+        <span class="field-label" id="symbol-label">Your symbol</span>
+        <div class="choice-row" role="group" aria-labelledby="symbol-label">
+          <button class="choice-btn" data-symbol="X" aria-pressed="true">X</button>
+          <button class="choice-btn" data-symbol="O" aria-pressed="false">O</button>
+        </div>
+      </div>
+      <div class="field-block">
+        <span class="field-label" id="diff-label">Difficulty</span>
+        <div class="choice-row" role="group" aria-labelledby="diff-label">
+          <button class="choice-btn" data-diff="easy" aria-pressed="true">Easy</button>
+          <button class="choice-btn" data-diff="medium" aria-pressed="false">Medium</button>
+          <button class="choice-btn" data-diff="hard" aria-pressed="false">Hard</button>
+        </div>
+        <p class="diff-desc" id="diff-desc"><b>Easy</b> — Casual</p>
+      </div>
+      <button class="btn" id="ai-start-btn">Start Match</button>
+    </div>
+  </section>
+
+  <!-- LOCAL SETUP -->
+  <section class="screen" id="screen-local-setup" aria-label="Local 2 player setup">
+    <div class="back-row">
+      <button class="icon-btn" data-nav="menu" aria-label="Back to menu">←</button>
+      <h2 class="screen-title">Local 2 Player</h2>
+      <span style="width:40px"></span>
+    </div>
+    <div class="card" style="display:flex; flex-direction:column; gap:20px;">
+      <div class="field-block">
+        <label class="field-label" for="local-name-x">Player X name</label>
+        <input type="text" id="local-name-x" maxlength="16" placeholder="Player X" autocomplete="off">
+      </div>
+      <div class="field-block">
+        <label class="field-label" for="local-name-o">Player O name</label>
+        <input type="text" id="local-name-o" maxlength="16" placeholder="Player O" autocomplete="off">
+      </div>
+      <button class="btn" id="local-start-btn">Start Match</button>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section class="screen" id="screen-game" aria-label="Game board">
+    <div class="back-row">
+      <button class="icon-btn" data-nav="menu" aria-label="Back to menu">←</button>
+      <h2 class="screen-title" id="game-mode-title">Match</h2>
+      <button class="icon-btn" id="sound-toggle-ingame" aria-label="Toggle sound">🔊</button>
+    </div>
+
+    <div class="status-bar" role="status" aria-live="polite">
+      <div class="turn-indicator">
+        <span class="turn-dot" id="turn-dot"></span>
+        <span class="turn-text" id="turn-text">Your Turn<small id="turn-subtext">You are X</small></span>
+      </div>
+      <span id="thinking-indicator" style="display:none;" class="thinking-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+    </div>
+
+    <div class="board" id="board" role="grid" aria-label="Tic tac toe board"></div>
+
+    <div class="scoreboard" aria-label="Scoreboard">
+      <div class="score-tile"><div class="num" id="score-x">0</div><div class="lbl" id="score-x-label">X Wins</div></div>
+      <div class="score-tile"><div class="num" id="score-o">0</div><div class="lbl" id="score-o-label">O Wins</div></div>
+      <div class="score-tile"><div class="num" id="score-draw">0</div><div class="lbl">Draws</div></div>
+      <div class="score-tile"><div class="num" id="score-streak">0</div><div class="lbl">Streak</div></div>
+    </div>
+
+    <div class="controls-row">
+      <button class="btn ghost" id="restart-round-btn">Restart Round</button>
+      <button class="btn ghost" id="new-game-btn">New Game</button>
+      <button class="btn ghost" id="back-menu-btn" data-nav="menu">Back to Menu</button>
+    </div>
+  </section>
+
+  <!-- LEADERBOARD -->
+  <section class="screen" id="screen-leaderboard" aria-label="Leaderboard">
+    <div class="back-row">
+      <button class="icon-btn" data-nav="menu" aria-label="Back to menu">←</button>
+      <h2 class="screen-title">Leaderboard</h2>
+      <span style="width:40px"></span>
+    </div>
+    <div class="card" style="display:flex; flex-direction:column; gap:16px;">
+      <div class="lb-sort-row" role="group" aria-label="Sort leaderboard">
+        <button class="choice-btn" data-sort="wins" aria-pressed="true">Most Wins</button>
+        <button class="choice-btn" data-sort="winrate" aria-pressed="false">Win Rate</button>
+        <button class="choice-btn" data-sort="streak" aria-pressed="false">Best Streak</button>
+      </div>
+      <div class="lb-table" id="lb-table"></div>
+      <button class="btn danger" id="clear-lb-btn">Clear Leaderboard</button>
+    </div>
+  </section>
+
+  <!-- HOW TO PLAY -->
+  <section class="screen" id="screen-howto" aria-label="How to play">
+    <div class="back-row">
+      <button class="icon-btn" data-nav="menu" aria-label="Back to menu">←</button>
+      <h2 class="screen-title">How to Play</h2>
+      <span style="width:40px"></span>
+    </div>
+    <div class="steps">
+      <div class="step"><span class="step-num">1</span><p>Choose a game mode — play against the SahyoNix AI, or challenge a friend locally.</p></div>
+      <div class="step"><span class="step-num">2</span><p>Pick your symbol and, against the AI, choose a difficulty: Easy, Medium, or Hard.</p></div>
+      <div class="step"><span class="step-num">3</span><p>Take turns placing your X or O on the board — one tap per cell.</p></div>
+      <div class="step"><span class="step-num">4</span><p>Get three of your symbol in a row — across, down, or diagonally — to win.</p></div>
+      <div class="step"><span class="step-num">5</span><p>Watch your opponent's line-ups and block them before they complete three in a row.</p></div>
+      <div class="step"><span class="step-num">6</span><p>If all nine cells fill up with no winner, the round ends in a draw.</p></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="screen" id="screen-settings" aria-label="Settings">
+    <div class="back-row">
+      <button class="icon-btn" data-nav="menu" aria-label="Back to menu">←</button>
+      <h2 class="screen-title">Settings</h2>
+      <span style="width:40px"></span>
+    </div>
+    <div class="card">
+      <div class="setting-row">
+        <span class="setting-label">Sound<small>Cell taps, wins &amp; menu sounds</small></span>
+        <label class="switch"><input type="checkbox" id="setting-sound" checked><span class="slider-toggle"></span></label>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Volume<small>Adjust effect loudness</small></span>
+        <input type="range" id="setting-volume" min="0" max="100" value="55" aria-label="Volume">
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Animations<small>Motion &amp; transitions</small></span>
+        <label class="switch"><input type="checkbox" id="setting-anim" checked><span class="slider-toggle"></span></label>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Appearance<small>Dark or light theme</small></span>
+        <div class="theme-row" role="group" aria-label="Theme">
+          <button class="choice-btn" data-theme-choice="dark" aria-pressed="true">Dark</button>
+          <button class="choice-btn" data-theme-choice="light" aria-pressed="false">Light</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="display:flex; flex-direction:column; gap:10px;">
+      <span class="field-label" style="margin:0;">Data</span>
+      <button class="btn ghost" id="reset-scores-btn">Reset Scores</button>
+      <button class="btn ghost" id="reset-lb-btn">Reset Leaderboard</button>
+      <button class="btn danger" id="reset-all-btn">Reset All Saved Data</button>
+    </div>
+  </section>
+
+</main>
+
+<footer>© 2026 <span class="gold">SahyoNix</span> — Play. Think. Win.</footer>
+
+<!-- Result overlay -->
+<div class="overlay" id="result-overlay" role="dialog" aria-modal="true" aria-labelledby="result-title">
+  <div class="result-card">
+    <h2 class="result-title" id="result-title">VICTORY!</h2>
+    <p class="result-sub" id="result-sub">SahyoNix AI has been defeated.</p>
+    <div class="btn-row">
+      <button class="btn" id="play-again-btn">Play Again</button>
+      <button class="btn ghost" id="result-menu-btn">Back to Menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm dialog -->
+<div class="confirm-overlay" id="confirm-overlay" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+  <div class="confirm-card">
+    <h3 id="confirm-title">Are you sure?</h3>
+    <p id="confirm-msg">This action cannot be undone.</p>
+    <div class="btn-row">
+      <button class="btn danger" id="confirm-yes">Confirm</button>
+      <button class="btn ghost" id="confirm-no">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     STORAGE KEYS
+  ============================================================ */
+  const LS_SCORES   = "sahyonix_scores_v1";
+  const LS_LB        = "sahyonix_leaderboard_v1";
+  const LS_SETTINGS  = "sahyonix_settings_v1";
+
+  /* ============================================================
+     STATE
+  ============================================================ */
+  let settings = { sound:true, volume:55, anim:true, theme:"dark" };
+  let scores = { x:0, o:0, draw:0, aiWins:0, streak:0, streakOwner:null };
+
+  let game = {
+    mode:null,            // "ai" | "local"
+    board:Array(9).fill(null),
+    current:"X",
+    playerSymbol:"X",     // for AI mode: which symbol the human plays
+    aiSymbol:"O",
+    difficulty:"easy",
+    names:{ X:"Player", O:"Player 2" },
+    active:false,
+    aiThinking:false,
+    winner:null,
+    winLine:null
+  };
+
+  const WIN_LINES = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+
+  /* ============================================================
+     PERSISTENCE
+  ============================================================ */
+  function saveGameData(){
+    try{
+      localStorage.setItem(LS_SCORES, JSON.stringify(scores));
+      localStorage.setItem(LS_SETTINGS, JSON.stringify(settings));
+    }catch(e){ /* storage unavailable - fail silently */ }
+  }
+
+  function loadGameData(){
+    try{
+      const s = localStorage.getItem(LS_SCORES);
+      if(s) scores = Object.assign(scores, JSON.parse(s));
+    }catch(e){}
+    try{
+      const st = localStorage.getItem(LS_SETTINGS);
+      if(st) settings = Object.assign(settings, JSON.parse(st));
+    }catch(e){}
+  }
+
+  function loadLeaderboard(){
+    try{
+      const raw = localStorage.getItem(LS_LB);
+      return raw ? JSON.parse(raw) : [];
+    }catch(e){ return []; }
+  }
+  function saveLeaderboard(list){
+    try{ localStorage.setItem(LS_LB, JSON.stringify(list)); }catch(e){}
+  }
+
+  function upsertLeaderboardEntry(name, result, difficulty, streakLen){
+    // result: "win" | "loss" | "draw"  (only recorded for AI matches)
+    const list = loadLeaderboard();
+    name = (name || "Player").trim().slice(0,16) || "Player";
+    let entry = list.find(e => e.name.toLowerCase() === name.toLowerCase());
+    if(!entry){
+      entry = { name, played:0, wins:0, losses:0, draws:0, bestStreak:0, lastDifficulty:difficulty };
+      list.push(entry);
+    }
+    entry.played++;
+    if(result === "win") entry.wins++;
+    else if(result === "loss") entry.losses++;
+    else entry.draws++;
+    entry.lastDifficulty = difficulty;
+    entry.bestStreak = Math.max(entry.bestStreak || 0, streakLen || 0);
+    saveLeaderboard(list);
+  }
+
+  /* ============================================================
+     SOUND SYSTEM (Web Audio API)
+  ============================================================ */
+  let audioCtx = null;
+  function getCtx(){
+    if(!audioCtx){
+      try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch(e){ audioCtx = null; }
+    }
+    return audioCtx;
+  }
+
+  function playSound(type){
+    if(!settings.sound) return;
+    const ctx = getCtx();
+    if(!ctx) return;
+    if(ctx.state === "suspended") ctx.resume();
+
+    const vol = Math.max(0, Math.min(1, settings.volume/100)) * 0.35;
+    if(vol <= 0) return;
+
+    const now = ctx.currentTime;
+    const master = ctx.createGain();
+    master.connect(ctx.destination);
+    master.gain.setValueAtTime(0, now);
+
+    function tone(freq, start, dur, wave, peak){
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = wave || "sine";
+      osc.frequency.setValueAtTime(freq, now + start);
+      gain.gain.setValueAtTime(0, now + start);
+      gain.gain.linearRampToValueAtTime(peak, now + start + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
+      osc.connect(gain);
+      gain.connect(master);
+      osc.start(now + start);
+      osc.stop(now + start + dur + 0.02);
+    }
+
+    master.gain.linearRampToValueAtTime(vol, now + 0.01);
+
+    switch(type){
+      case "click":       tone(520, 0, 0.07, "sine", 1); break;
+      case "menu":         tone(440, 0, 0.09, "triangle", .8); break;
+      case "placeX":       tone(660, 0, 0.10, "sine", 1); tone(880, 0.04, 0.08, "sine", .6); break;
+      case "placeO":       tone(500, 0, 0.12, "sine", 1); tone(380, 0.05, 0.10, "sine", .6); break;
+      case "button":       tone(600, 0, 0.06, "square", .5); break;
+      case "aiMove":       tone(340, 0, 0.09, "triangle", .7); break;
+      case "win":
+        tone(523.25,0,0.16,"sine",1); tone(659.25,0.1,0.16,"sine",1);
+        tone(783.99,0.2,0.22,"sine",1); break;
+      case "lose":
+        tone(300,0,0.18,"sawtooth",.6); tone(220,0.14,0.24,"sawtooth",.6); break;
+      case "draw":
+        tone(400,0,0.14,"triangle",.6); tone(400,0.16,0.14,"triangle",.5); break;
+      default: tone(440,0,0.08,"sine",.7);
+    }
+  }
+
+  /* ============================================================
+     NAVIGATION
+  ============================================================ */
+  function showScreen(name){
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    const el = document.getElementById("screen-" + name);
+    if(el) el.classList.add("active");
+    window.scrollTo({top:0, behavior: settings.anim ? "smooth" : "auto"});
+  }
+
+  document.addEventListener("click", (e)=>{
+    const nav = e.target.closest("[data-nav]");
+    if(nav){
+      playSound("menu");
+      showScreen(nav.getAttribute("data-nav"));
+    }
+  });
+
+  /* ============================================================
+     TOAST
+  ============================================================ */
+  let toastTimer = null;
+  function showToast(msg){
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> t.classList.remove("show"), 2200);
+  }
+
+  /* ============================================================
+     CONFIRM DIALOG
+  ============================================================ */
+  function confirmAction(title, msg, onYes){
+    const overlay = document.getElementById("confirm-overlay");
+    document.getElementById("confirm-title").textContent = title;
+    document.getElementById("confirm-msg").textContent = msg;
+    overlay.classList.add("show");
+
+    function cleanup(){
+      overlay.classList.remove("show");
+      yesBtn.removeEventListener("click", yesHandler);
+      noBtn.removeEventListener("click", noHandler);
+    }
+    const yesBtn = document.getElementById("confirm-yes");
+    const noBtn = document.getElementById("confirm-no");
+    function yesHandler(){ cleanup(); onYes(); }
+    function noHandler(){ cleanup(); }
+    yesBtn.addEventListener("click", yesHandler);
+    noBtn.addEventListener("click", noHandler);
+  }
+
+  /* ============================================================
+     AI SETUP SCREEN LOGIC
+  ============================================================ */
+  let chosenSymbol = "X";
+  let chosenDiff = "easy";
+  const diffText = {
+    easy:   {label:"Easy", desc:"Casual"},
+    medium: {label:"Medium", desc:"Challenging"},
+    hard:   {label:"Hard", desc:"Unbeatable"}
+  };
+
+  document.querySelectorAll("[data-symbol]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      playSound("click");
+      document.querySelectorAll("[data-symbol]").forEach(b=>b.setAttribute("aria-pressed","false"));
+      btn.setAttribute("aria-pressed","true");
+      chosenSymbol = btn.getAttribute("data-symbol");
+    });
+  });
+  document.querySelectorAll("[data-diff]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      playSound("click");
+      document.querySelectorAll("[data-diff]").forEach(b=>b.setAttribute("aria-pressed","false"));
+      btn.setAttribute("aria-pressed","true");
+      chosenDiff = btn.getAttribute("data-diff");
+      const d = diffText[chosenDiff];
+      document.getElementById("diff-desc").innerHTML = `<b>${d.label}</b> — ${d.desc}`;
+    });
+  });
+
+  document.getElementById("ai-start-btn").addEventListener("click", ()=>{
+    playSound("button");
+    const nameInput = document.getElementById("ai-player-name").value.trim();
+    const name = nameInput || "Player";
+    game.mode = "ai";
+    game.playerSymbol = chosenSymbol;
+    game.aiSymbol = chosenSymbol === "X" ? "O" : "X";
+    game.difficulty = chosenDiff;
+    game.names = { X: chosenSymbol === "X" ? name : "SahyoNix AI",
+                   O: chosenSymbol === "O" ? name : "SahyoNix AI" };
+    game.names.playerName = name;
+    startGame();
+  });
+
+  document.getElementById("local-start-btn").addEventListener("click", ()=>{
+    playSound("button");
+    const nx = document.getElementById("local-name-x").value.trim() || "Player X";
+    const no = document.getElementById("local-name-o").value.trim() || "Player O";
+    game.mode = "local";
+    game.names = { X: nx, O: no };
+    startGame();
+  });
+
+  /* ============================================================
+     GAME CORE
+  ============================================================ */
+  function startGame(){
+    game.board = Array(9).fill(null);
+    game.current = "X";
+    game.active = true;
+    game.aiThinking = false;
+    game.winner = null;
+    game.winLine = null;
+
+    document.getElementById("game-mode-title").textContent =
+      game.mode === "ai" ? `Vs SahyoNix AI · ${diffText[game.difficulty].label}` : "Local 2 Player";
+
+    document.getElementById("score-x-label").textContent =
+      game.mode === "ai" ? (game.playerSymbol === "X" ? game.names.playerName : "SahyoNix AI") : game.names.X;
+    document.getElementById("score-o-label").textContent =
+      game.mode === "ai" ? (game.playerSymbol === "O" ? game.names.playerName : "SahyoNix AI") : game.names.O;
+
+    buildBoard();
+    updateBoard();
+    updateStatus();
+    updateScoreDisplay(false);
+    showScreen("game");
+
+    // If AI plays X (player chose O), AI moves first
+    if(game.mode === "ai" && game.aiSymbol === "X"){
+      queueAiMove();
+    }
+  }
+
+  function buildBoard(){
+    const boardEl = document.getElementById("board");
+    boardEl.innerHTML = "";
+    boardEl.classList.remove("draw");
+    for(let i=0;i<9;i++){
+      const cell = document.createElement("button");
+      cell.className = "cell";
+      cell.type = "button";
+      cell.setAttribute("role","gridcell");
+      cell.setAttribute("aria-label","Cell " + (i+1) + ", empty");
+      cell.dataset.index = i;
+      cell.addEventListener("click", onCellClick);
+      boardEl.appendChild(cell);
+    }
+  }
+
+  function onCellClick(e){
+    const idx = parseInt(e.currentTarget.dataset.index, 10);
+    if(!game.active || game.aiThinking) return;
+    if(game.board[idx]) return; // occupied
+    if(game.mode === "ai" && game.current !== game.playerSymbol) return; // not player's turn
+
+    makeMove(idx, game.current);
+  }
+
+  function makeMove(idx, symbol){
+    if(!game.active) return;
+    if(game.board[idx]) return; // guard against race / double click
+
+    game.board[idx] = symbol;
+    playSound(symbol === "X" ? "placeX" : "placeO");
+    updateBoard();
+
+    const winInfo = checkWinner(game.board);
+    if(winInfo){
+      handleWin(winInfo);
+      return;
+    }
+    if(checkDraw(game.board)){
+      handleDraw();
+      return;
+    }
+
+    game.current = symbol === "X" ? "O" : "X";
+    updateStatus();
+
+    if(game.mode === "ai" && game.current === game.aiSymbol){
+      queueAiMove();
+    }
+  }
+
+  function checkWinner(board){
+    for(const line of WIN_LINES){
+      const [a,b,c] = line;
+      if(board[a] && board[a] === board[b] && board[a] === board[c]){
+        return { symbol: board[a], line };
+      }
+    }
+    return null;
+  }
+
+  function checkDraw(board){
+    return board.every(c => c !== null);
+  }
+
+  /* ============================================================
+     UI UPDATES
+  ============================================================ */
+  function updateBoard(){
+    const cells = document.querySelectorAll(".cell");
+    cells.forEach((cell, i)=>{
+      const val = game.board[i];
+      cell.classList.remove("win");
+      if(val){
+        if(!cell.classList.contains("filled")){
+          cell.innerHTML = `<span class="mark">${val}</span>`;
+          cell.classList.add("filled", val === "X" ? "mark-x" : "mark-o");
+        }
+        cell.disabled = true;
+        cell.setAttribute("aria-label","Cell " + (i+1) + ", " + val);
+      } else {
+        cell.innerHTML = "";
+        cell.classList.remove("filled","mark-x","mark-o");
+        cell.disabled = !game.active;
+        cell.setAttribute("aria-label","Cell " + (i+1) + ", empty");
+      }
+    });
+  }
+
+  function updateStatus(){
+    const dot = document.getElementById("turn-dot");
+    const text = document.getElementById("turn-text");
+    const sub = document.getElementById("turn-subtext");
+    const thinking = document.getElementById("thinking-indicator");
+
+    dot.className = "turn-dot" + (game.current === "O" ? " o" : "");
+    thinking.style.display = "none";
+
+    if(game.mode === "ai"){
+      if(game.current === game.playerSymbol){
+        text.textContent = "Your Turn";
+        sub.textContent = `You are ${game.playerSymbol}`;
+      } else {
+        text.textContent = "SahyoNix AI";
+        sub.textContent = "AI Thinking...";
+        thinking.style.display = "inline-flex";
+      }
+    } else {
+      text.textContent = `${game.names[game.current]}'s Turn`;
+      sub.textContent = `Playing ${game.current}`;
+    }
+    text.innerHTML = text.textContent === "Your Turn"
+      ? `Your Turn<small>${sub.textContent}</small>`
+      : (game.mode === "ai" && game.current !== game.playerSymbol
+          ? `SahyoNix AI<small>Thinking...</small>`
+          : `${game.names[game.current]}'s Turn<small>Playing ${game.current}</small>`);
+  }
+
+  function updateScoreDisplay(bump){
+    const map = {
+      "score-x": scores.x,
+      "score-o": scores.o,
+      "score-draw": scores.draw,
+      "score-streak": scores.streak
+    };
+    Object.keys(map).forEach(id=>{
+      const el = document.getElementById(id);
+      el.textContent = map[id];
+      if(bump){
+        el.classList.remove("bump");
+        void el.offsetWidth;
+        el.classList.add("bump");
+      }
+    });
+  }
+
+  /* ============================================================
+     WIN / DRAW HANDLING
+  ============================================================ */
+  function handleWin(winInfo){
+    game.active = false;
+    game.winner = winInfo.symbol;
+    game.winLine = winInfo.line;
+
+    winInfo.line.forEach(i=>{
+      document.querySelectorAll(".cell")[i].classList.add("win");
+    });
+    document.querySelectorAll(".cell").forEach(c => c.disabled = true);
+
+    let resultType; // "win" (player win), "loss" (AI win), "draw"
+    if(game.mode === "ai"){
+      // Always tally the win under the symbol that actually won, so the
+      // scoreboard tile (labeled with whoever holds that symbol) stays accurate.
+      if(winInfo.symbol === "X") scores.x += 1; else scores.o += 1;
+
+      if(winInfo.symbol === game.playerSymbol){
+        scores.streak = (scores.streakOwner === "player") ? scores.streak + 1 : 1;
+        scores.streakOwner = "player";
+        resultType = "win";
+        playSound("win");
+        showResult("VICTORY!", "SahyoNix AI has been defeated.", "win");
+      } else {
+        scores.aiWins += 1;
+        scores.streak = (scores.streakOwner === "ai") ? scores.streak + 1 : 1;
+        scores.streakOwner = "ai";
+        resultType = "loss";
+        playSound("lose");
+        showResult("GAME OVER", "SahyoNix AI claims this round.", "loss");
+      }
+      upsertLeaderboardEntry(game.names.playerName, resultType, game.difficulty,
+        scores.streakOwner === "player" ? scores.streak : 0);
+    } else {
+      if(winInfo.symbol === "X"){ scores.x += 1; }
+      else { scores.o += 1; }
+      scores.streak = (scores.streakOwner === winInfo.symbol) ? scores.streak + 1 : 1;
+      scores.streakOwner = winInfo.symbol;
+      playSound("win");
+      showResult("VICTORY!", `${game.names[winInfo.symbol]} takes the round!`, "win");
+    }
+
+    updateScoreDisplay(true);
+    saveGameData();
+  }
+
+  function handleDraw(){
+    game.active = false;
+    document.getElementById("board").classList.add("draw");
+    document.querySelectorAll(".cell").forEach(c => c.disabled = true);
+    scores.draw += 1;
+    scores.streak = 0;
+    scores.streakOwner = null;
+    playSound("draw");
+
+    if(game.mode === "ai"){
+      upsertLeaderboardEntry(game.names.playerName, "draw", game.difficulty, 0);
+    }
+    updateScoreDisplay(true);
+    saveGameData();
+    showResult("DRAW GAME", "An evenly matched round. Well played.", "draw");
+  }
+
+  function showResult(title, sub, kind){
+    const overlay = document.getElementById("result-overlay");
+    const titleEl = document.getElementById("result-title");
+    titleEl.textContent = title;
+    titleEl.className = "result-title" + (kind === "loss" ? " loss" : kind === "draw" ? " draw" : "");
+    document.getElementById("result-sub").textContent = sub;
+    setTimeout(()=> overlay.classList.add("show"), 350);
+  }
+
+  document.getElementById("play-again-btn").addEventListener("click", ()=>{
+    playSound("button");
+    document.getElementById("result-overlay").classList.remove("show");
+    restartRound();
+  });
+  document.getElementById("result-menu-btn").addEventListener("click", ()=>{
+    playSound("menu");
+    document.getElementById("result-overlay").classList.remove("show");
+    showScreen("menu");
+  });
+
+  function restartRound(){
+    game.board = Array(9).fill(null);
+    game.current = "X";
+    game.active = true;
+    game.aiThinking = false;
+    game.winner = null;
+    game.winLine = null;
+    buildBoard();
+    updateBoard();
+    updateStatus();
+    if(game.mode === "ai" && game.aiSymbol === "X"){
+      queueAiMove();
+    }
+  }
+
+  document.getElementById("restart-round-btn").addEventListener("click", ()=>{
+    playSound("button");
+    document.getElementById("result-overlay").classList.remove("show");
+    restartRound();
+  });
+
+  document.getElementById("new-game-btn").addEventListener("click", ()=>{
+    playSound("button");
+    document.getElementById("result-overlay").classList.remove("show");
+    scores = { x:0, o:0, draw:0, aiWins:0, streak:0, streakOwner:null };
+    updateScoreDisplay(false);
+    saveGameData();
+    restartRound();
+    showToast("New game started — scores reset");
+  });
+
+  /* ============================================================
+     AI LOGIC
+  ============================================================ */
+  function queueAiMove(){
+    game.aiThinking = true;
+    updateStatus();
+    document.querySelectorAll(".cell").forEach(c => c.disabled = true);
+
+    const delay = 500 + Math.random() * 500;
+    setTimeout(()=>{
+      if(!game.active){ game.aiThinking = false; return; }
+      const idx = aiMove();
+      game.aiThinking = false;
+      playSound("aiMove");
+      // re-enable empty cells for player before making the move visible
+      makeMove(idx, game.aiSymbol);
+      if(game.active){
+        document.querySelectorAll(".cell").forEach((c,i)=>{
+          if(!game.board[i]) c.disabled = false;
+        });
+      }
+    }, delay);
+  }
+
+  function aiMove(){
+    const empty = game.board.reduce((acc,v,i)=>{ if(!v) acc.push(i); return acc; },[]);
+    if(game.difficulty === "easy"){
+      return empty[Math.floor(Math.random() * empty.length)];
+    }
+    if(game.difficulty === "medium"){
+      return mediumMove(empty);
+    }
+    return bestMove(); // hard = minimax
+  }
+
+  function mediumMove(empty){
+    const me = game.aiSymbol;
+    const opp = game.playerSymbol;
+
+    // 30% pure random for beatability
+    if(Math.random() < 0.3){
+      return empty[Math.floor(Math.random() * empty.length)];
+    }
+    // Try to win
+    for(const idx of empty){
+      const b = game.board.slice(); b[idx] = me;
+      if(checkWinner(b)) return idx;
+    }
+    // Try to block
+    for(const idx of empty){
+      const b = game.board.slice(); b[idx] = opp;
+      if(checkWinner(b)) return idx;
+    }
+    // Prefer center, then corners, else random
+    if(!game.board[4]) return 4;
+    const corners = [0,2,6,8].filter(i => !game.board[i]);
+    if(corners.length && Math.random() < 0.6){
+      return corners[Math.floor(Math.random()*corners.length)];
+    }
+    return empty[Math.floor(Math.random() * empty.length)];
+  }
+
+  function bestMove(){
+    const me = game.aiSymbol;
+    const opp = game.playerSymbol;
+    let bestScore = -Infinity;
+    let move = null;
+    const empty = game.board.reduce((acc,v,i)=>{ if(!v) acc.push(i); return acc; },[]);
+
+    // Small opening-book optimization: if board empty, take a corner or center
+    const filledCount = 9 - empty.length;
+    if(filledCount === 0){
+      const opts = [0,2,4,6,8];
+      return opts[Math.floor(Math.random()*opts.length)];
+    }
+
+    for(const idx of empty){
+      const b = game.board.slice();
+      b[idx] = me;
+      const score = minimax(b, 0, false, me, opp, -Infinity, Infinity);
+      if(score > bestScore){
+        bestScore = score;
+        move = idx;
+      }
+    }
+    return move;
+  }
+
+  function minimax(board, depth, isMaximizing, me, opp, alpha, beta){
+    const winInfo = checkWinner(board);
+    if(winInfo){
+      if(winInfo.symbol === me) return 10 - depth;
+      if(winInfo.symbol === opp) return depth - 10;
+    }
+    if(checkDraw(board)) return 0;
+
+    const empty = board.reduce((acc,v,i)=>{ if(!v) acc.push(i); return acc; },[]);
+
+    if(isMaximizing){
+      let best = -Infinity;
+      for(const idx of empty){
+        board[idx] = me;
+        const score = minimax(board, depth+1, false, me, opp, alpha, beta);
+        board[idx] = null;
+        best = Math.max(best, score);
+        alpha = Math.max(alpha, best);
+        if(beta <= alpha) break;
+      }
+      return best;
+    } else {
+      let best = Infinity;
+      for(const idx of empty){
+        board[idx] = opp;
+        const score = minimax(board, depth+1, true, me, opp, alpha, beta);
+        board[idx] = null;
+        best = Math.min(best, score);
+        beta = Math.min(beta, best);
+        if(beta <= alpha) break;
+      }
+      return best;
+    }
+  }
+
+  /* ============================================================
+     LEADERBOARD SCREEN
+  ============================================================ */
+  let lbSort = "wins";
+
+  document.querySelectorAll("[data-sort]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      playSound("click");
+      document.querySelectorAll("[data-sort]").forEach(b=>b.setAttribute("aria-pressed","false"));
+      btn.setAttribute("aria-pressed","true");
+      lbSort = btn.getAttribute("data-sort");
+      renderLeaderboard();
+    });
+  });
+
+  function renderLeaderboard(){
+    const list = loadLeaderboard().map(e=>({
+      ...e,
+      winRate: e.played ? Math.round((e.wins / e.played) * 100) : 0
+    }));
+
+    if(lbSort === "wins") list.sort((a,b)=> b.wins - a.wins);
+    else if(lbSort === "winrate") list.sort((a,b)=> b.winRate - a.winRate || b.wins - a.wins);
+    else if(lbSort === "streak") list.sort((a,b)=> (b.bestStreak||0) - (a.bestStreak||0));
+
+    const container = document.getElementById("lb-table");
+    container.innerHTML = "";
+
+    if(!list.length){
+      container.innerHTML = `<div class="empty-note">No matches recorded yet. Play a round against the SahyoNix AI to appear here.</div>`;
+      return;
+    }
+
+    list.forEach((entry, i)=>{
+      const row = document.createElement("div");
+      row.className = "lb-row";
+      let statVal, statLabel;
+      if(lbSort === "winrate"){ statVal = entry.winRate + "%"; statLabel = "win rate"; }
+      else if(lbSort === "streak"){ statVal = entry.bestStreak || 0; statLabel = "best streak"; }
+      else { statVal = entry.wins; statLabel = "wins"; }
+
+      row.innerHTML = `
+        <span class="lb-rank">${i+1}</span>
+        <span>
+          <span class="lb-name">${escapeHtml(entry.name)}</span>
+          <span class="lb-meta">${entry.played} played · ${entry.wins}W ${entry.losses}L ${entry.draws}D · last: ${cap(entry.lastDifficulty || "-")}</span>
+        </span>
+        <span class="lb-stat"><span class="big">${statVal}</span><br><span class="lb-meta">${statLabel}</span></span>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  function cap(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+  function escapeHtml(str){
+    const d = document.createElement("div");
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  document.getElementById("clear-lb-btn").addEventListener("click", ()=>{
+    playSound("button");
+    confirmAction("Clear Leaderboard?", "This will permanently remove all recorded matches.", ()=>{
+      saveLeaderboard([]);
+      renderLeaderboard();
+      showToast("Leaderboard cleared");
+    });
+  });
+
+  /* ============================================================
+     SETTINGS SCREEN
+  ============================================================ */
+  const soundToggle = document.getElementById("setting-sound");
+  const volumeSlider = document.getElementById("setting-volume");
+  const animToggle = document.getElementById("setting-anim");
+  const soundToggleIngame = document.getElementById("sound-toggle-ingame");
+
+  function applySettingsToUI(){
+    soundToggle.checked = settings.sound;
+    volumeSlider.value = settings.volume;
+    animToggle.checked = settings.anim;
+    document.body.classList.toggle("no-anim", !settings.anim);
+    document.body.setAttribute("data-theme", settings.theme);
+    document.querySelectorAll("[data-theme-choice]").forEach(b=>{
+      b.setAttribute("aria-pressed", b.getAttribute("data-theme-choice") === settings.theme ? "true":"false");
+    });
+    soundToggleIngame.textContent = settings.sound ? "🔊" : "🔇";
+    soundToggleIngame.setAttribute("aria-label", settings.sound ? "Mute sound" : "Unmute sound");
+  }
+
+  soundToggle.addEventListener("change", ()=>{
+    settings.sound = soundToggle.checked;
+    saveGameData();
+    if(settings.sound) playSound("click");
+    applySettingsToUI();
+  });
+  volumeSlider.addEventListener("input", ()=>{
+    settings.volume = parseInt(volumeSlider.value,10);
+    saveGameData();
+  });
+  volumeSlider.addEventListener("change", ()=> playSound("click"));
+  animToggle.addEventListener("change", ()=>{
+    settings.anim = animToggle.checked;
+    saveGameData();
+    applySettingsToUI();
+    playSound("click");
+  });
+  document.querySelectorAll("[data-theme-choice]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      settings.theme = btn.getAttribute("data-theme-choice");
+      applySettingsToUI();
+      saveGameData();
+      playSound("click");
+    });
+  });
+  soundToggleIngame.addEventListener("click", ()=>{
+    settings.sound = !settings.sound;
+    saveGameData();
+    applySettingsToUI();
+    if(settings.sound) playSound("click");
+  });
+
+  document.getElementById("reset-scores-btn").addEventListener("click", ()=>{
+    confirmAction("Reset Scores?", "Current match scoreboard totals will be set back to zero.", ()=>{
+      scores = { x:0, o:0, draw:0, aiWins:0, streak:0, streakOwner:null };
+      saveGameData();
+      updateScoreDisplay(false);
+      showToast("Scores reset");
+    });
+  });
+  document.getElementById("reset-lb-btn").addEventListener("click", ()=>{
+    confirmAction("Reset Leaderboard?", "All player records will be permanently deleted.", ()=>{
+      saveLeaderboard([]);
+      renderLeaderboard();
+      showToast("Leaderboard reset");
+    });
+  });
+  document.getElementById("reset-all-btn").addEventListener("click", ()=>{
+    confirmAction("Reset All Data?", "This clears scores, leaderboard and settings back to defaults. This cannot be undone.", ()=>{
+      try{
+        localStorage.removeItem(LS_SCORES);
+        localStorage.removeItem(LS_LB);
+        localStorage.removeItem(LS_SETTINGS);
+      }catch(e){}
+      scores = { x:0, o:0, draw:0, aiWins:0, streak:0, streakOwner:null };
+      settings = { sound:true, volume:55, anim:true, theme:"dark" };
+      applySettingsToUI();
+      updateScoreDisplay(false);
+      renderLeaderboard();
+      showToast("All saved data has been reset");
+    });
+  });
+
+  /* ============================================================
+     GLOBAL BUTTON CLICK SOUND (menu navigation / generic buttons)
+  ============================================================ */
+  document.querySelectorAll(".btn, .icon-btn, .choice-btn, .menu-btn").forEach(btn=>{
+    btn.addEventListener("pointerdown", ()=>{
+      // Unlock audio context on first interaction (mobile requirement)
+      const ctx = getCtx();
+      if(ctx && ctx.state === "suspended") ctx.resume();
+    }, { once:false });
+  });
+
+  /* ============================================================
+     KEYBOARD SUPPORT: ESC closes overlays
+  ============================================================ */
+  document.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape"){
+      document.getElementById("confirm-overlay").classList.remove("show");
+    }
+  });
+
+  /* ============================================================
+     INIT
+  ============================================================ */
+  function init(){
+    loadGameData();
+    applySettingsToUI();
+    updateScoreDisplay(false);
+    renderLeaderboard();
+    showScreen("menu");
+  }
+
+  init();
+
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", ()=>{
+      navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+    });
+  }
+})();
+</script>
+</body>
+</html>
